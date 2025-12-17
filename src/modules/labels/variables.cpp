@@ -578,7 +578,7 @@ namespace eclipse::labels {
             constexpr std::array keys = {
                 "attempt", "isTestMode", "isPracticeMode", "isPlatformer",
                 "levelTime", "levelLength", "levelDuration", "time", "frame",
-                "isDead", "isDualMode", "noclipDeaths", "noclipAccuracy", "progress",
+                "isDead", "isTwoPlayer", "isDualMode", "noclipDeaths", "noclipAccuracy", "progress",
                 "editorMode", "realProgress", "objects"
             };
             for (auto const& key : keys) {
@@ -603,6 +603,7 @@ namespace eclipse::labels {
         m_variables["frame"] = gameLayer->m_gameState.m_currentProgress;
         m_variables["frameReal"] = gameLayer->m_gameState.m_levelTime * utils::getTPS();
         m_variables["isDead"] = gameLayer->m_player1->m_isDead;
+        m_variables["isTwoPlayerLevel"] = (gameLayer->m_player2 != nullptr);
         m_variables["isDualMode"] = gameLayer->m_player2 != nullptr && gameLayer->m_player2->isRunning();
         m_variables["noclipDeaths"] = config::getTemp("noclipDeaths", 0);
         m_variables["noclipAccuracy"] = config::getTemp("noclipAccuracy", 100.f);
