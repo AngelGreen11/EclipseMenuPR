@@ -17,6 +17,7 @@
 #include <Geode/modify/GJBaseGameLayer.hpp>
 #include <Geode/modify/PlayerObject.hpp>
 #include <Geode/modify/PlayLayer.hpp>
+#include <Geode/modify/EditorUI.hpp>
 
 using namespace geode::prelude;
 
@@ -414,6 +415,16 @@ namespace eclipse::hacks::Bot {
                 return;
 
             s_bot.recordInput(m_gameState.m_currentProgress, (PlayerButton) button, !player1, down);
+        }
+    };
+
+    // this fixes bot playback in level editor (robtop doesn't reset the counter)
+    class $modify(BotEUIHook, EditorUI) {
+        void onPlaytest(CCObject* sender) {
+            if (auto* editorLayer = utils::get<LevelEditorLayer>()) {
+                editorLayer->m_gameState.m_currentProgress = 0;
+            }
+            EditorUI::onPlaytest(sender);
         }
     };
 }
