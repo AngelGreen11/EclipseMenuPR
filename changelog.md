@@ -1,5 +1,102 @@
 # Eclipse Menu
 
+## v1.9.4
+**Fixes**:
+* <cg>Fixed</c> an incompatibility with <cl>Deltarune Textboxes</c> that caused crashes on level launch
+* <cg>Fixed</c> replay search bar not being <cl>case-insensitive</c>
+* <cg>Re-added</c> `globed.playersOnLevel` variable
+
+## v1.9.3
+**Fixes**:
+* <cg>Fixed</c> <co>Swift Click</c> not working in bot replay mode
+* <cg>Fixed</c> a pause related bug in <co>Replay Bot</c>
+* <cg>Fixed</c> a two player mode bug in <co>Replay Bot</c>
+* <cg>Fixed</c> replay saving bug if macro contains multiple actions in the same frame
+* <cg>Re-enabled</c> <cy>Globed</c> label variables (player count is currently unavailable and requires a Globed update)
+* <cr>Removed</c> ability to bind keys to <cl>Left Mouse Button</c> due to having more issues than benefits
+* <cg>Fixed</c> text in the <co>Auto Safe Mode</c> warning popup not being centered
+* <cg>Fixed</c> <co>Auto Safe Mode</c> warning popup showing on "Coming Soon" and "The Tower" pages
+* <cg>Fixed</c> a crash that happens with <cl>Cocos UI</c> if you press any button and close button at the same time
+
+## v1.9.2
+**Fixes**:
+* <cg>Fixed</c> multiple keybinds regressions
+
+## v1.9.1
+**Fixes**:
+* <cg>Fixed</c> physics breaks on levels with dynamic objects
+* <cg>Fixed</c> graphical glitches happening in <cl>ImGui</c> mode for some users
+
+## v1.9.0
+**Additions**:
+* Added <cg>Clipsy</c> - AI companion/chatbot
+* Added <cg>Swift Click</c> on mobile (by @slideglide)
+* Added <cg>28 new emojis</c> for labels
+* Added <cg>VSync</c> and <cg>FPS Bypass</c> toggles on <cl>macOS</c> (requires SDL Mod to be installed)
+
+**Fixes**:
+* <cg>Fixed</c> scroll layer incompatibility with <co>Better Touch Prio</c> mod (#356 by @km7dev)
+* <cg>Fixed</c> <co>Auto Song Download</c> not working
+* <cg>Fixed</c> several issues with <co>Slider Bypass</c> in editor (#361 by @alk)
+* <cg>Improved</c> precision of <co>Noclip Accuracy</c> (uses double-precision floating point now)
+* <cg>Fixed</c> readonly editor getting bypassed even without <co>Level Edit</c> enabled
+* <cg>Fixed</c> arrows keys typing 'a' in textboxes with <cl>ImGui</c> UI mode
+* <cg>Fixed</c> clipboard not working with <cl>ImGui</c> UI mode
+* <cg>Fixed</c> autoclicker and frame stepper on mobile (forces swift click when using them)
+
+## v1.8.3
+**Fixes**:
+* <cg>Fixed</c> <co>Replay Bot</c> accuracy after 2.208 changes
+* <cg>Fixed</c> <co>Practice Fix</c> not properly saving auto-checkpoints
+* <cg>Fixed</c> some <cl>Memory-based</c> <co>Practice Fix</c> crashes
+* <cg>Fixed</c> <co>Default Song Bypass</c> not saving the song choice
+* <cg>Fixed</c> label file picker crashes on Android
+* <cg>Fixed</c> <co>Wave Trail On Death</c> not working on <cl>macOS</c>
+
+## v1.8.2
+**Fixes**:
+* <cg>Fixed</c> <co>Solid Wave Trail</c> not working sometimes
+* <cg>Fixed</c> percentage calculation to match 2.208 changes
+
+## v1.8.1
+**Fixes**:
+* <cg>Fixed</c> an invisible crash on game close
+* <cg>Fixed</c> not being able to bind keys to any toggles
+* <cg>Fixed</c> <co>Click Teleport</c> not triggering on mouse click
+* <cg>Fixed</c> incompatibility with pre-2.208 replays
+* Temporarily made <co>Memory-based</c> Practice Fix not the default option
+* Auto disable <cl>Click Between Steps</c> when recording a replay
+
+## v1.8.0
+This update adds **<cg>Geometry Dash v2.2081</c>** support
+
+**Additions**:
+* Added <cg>Wave Trail On Death</c>
+* Added <cg>Persist Trail</c>
+* Added <cg>Composite Keybinds</c> (e.g. Ctrl + Key) for shortcuts
+* Added <cg>Click On Steps</c> and <cg>Click Between Steps</c> toggles
+* Added <cg>Show Spam Comments</c> (#314 by @Beat)
+* Added <cg>Search Auto Focus</c> toggle and disabled it by default
+* Added a warning popup on level enter when <co>Auto Safe Mode</c> or <co>Safe Mode</c> are active
+* Added <cg>Open Replays</c> button (#302 by @slideglide)
+* <co>FPS Bypass</c> and <co>Vertical Sync</c> now mutually disable each other
+* <co>Replay Bot</c> can now playback in editor
+* <co>Random Seed</c> is now supported on all platforms and has more options
+* <co>Stop Triggers on Death</c> can be toggled for platformer mode
+* <co>Hitbox Trail</c> now shows CBS ticks
+* Optimized <co>Hitbox Trail</c> memory usage
+* Increased max length of <co>Hitbox Trails</c>
+* Increased max TPS value
+
+**Fixes**:
+* <cg>Fixed</c> a <co>Replay Bot</c> input check that could cause recording issues
+* <cg>Fixed</c> replay picker showing `.DS_Store` files on macOS (#292 by @XblazeGMD)
+* <cg>Fixed</c> multiple issues with <co>Discord RPC</c> not showing status
+* <cg>Fixed</c> <co>Path Unlocker</c> also unlocking other items (#306 by @km7dev)
+* <cg>Fixed</c> <co>Auto Song Download</c> not downloading songs for daily/weekly levels
+* <cg>Fixed</c> <co>Auto Song Download</c> crash with the Newgrounds TOS popup (#317 by @RayDeeUx)
+* <co>Stop Triggers on Death</c> is now considered a cheat in platformer mode
+
 ## v1.7.0
 **Additions**:
 * Added <cg>No Music Fade Out</c> (#273 by @Beat)

@@ -402,44 +402,39 @@ namespace eclipse::hacks::Labels {
                       ->setDescription();
                });
             tab->addButton("labels.import")->callback([this] {
-                using FileEvent = geode::Task<geode::Result<std::filesystem::path>>;
-                static geode::EventListener<FileEvent> s_listener;
                 geode::utils::file::FilePickOptions::Filter filter;
                 filter.description = "Eclipse Label (*.ecl)";
                 filter.files.insert("*.ecl");
-                s_listener.bind([this](FileEvent::Event* event) {
-                    if (auto value = event->getValue()) {
-                        auto path = value->unwrapOr("");
+
+                geode::async::spawn(
+                    geode::utils::file::pick(
+                        geode::utils::file::PickMode::OpenFile,
+                        {geode::Mod::get()->getSaveDir(), {std::move(filter)}}
+                    ),
+                    [this](geode::utils::file::PickResult res) {
+                        if (!res) return;
+                        auto pathOpt = std::move(res).unwrapOr(std::nullopt);
+                        if (!pathOpt.has_value()) return;
+
+                        auto path = std::move(pathOpt).value();
                         std::error_code ec;
-                        if (path.empty() || !std::filesystem::exists(path, ec))
-                            return;
+                        if (!std::filesystem::exists(path, ec)) return;
 
-                        gui::Engine::queueAfterDrawing([this, path] {
-                            std::ifstream file(path);
-
-                            nlohmann::json json = nlohmann::json::parse(file, nullptr, false);
-                            file.close();
-
-                            if (json.is_discarded()) {
+                        gui::Engine::queueAfterDrawing([this, path = std::move(path)] {
+                            auto res = geode::utils::file::readFromJson<labels::LabelSettings>(path);
+                            if (!res) {
                                 return Popup::create(
                                     i18n::get_("labels.import-failed"),
                                     i18n::get_("labels.import-failed.msg")
                                 );
                             }
 
-                            s_labels.emplace_back(json.get<labels::LabelSettings>());
+                            s_labels.emplace_back(std::move(res).unwrap());
                             config::set("labels", s_labels);
                             updateLabels(true);
                             createLabelComponent();
                         });
                     }
-                });
-
-                s_listener.setFilter(
-                    geode::utils::file::pick(
-                        geode::utils::file::PickMode::OpenFile,
-                        {geode::Mod::get()->getSaveDir(), {filter}}
-                    )
                 );
             });
             tab->addButton("labels.add-new")->callback([this] {

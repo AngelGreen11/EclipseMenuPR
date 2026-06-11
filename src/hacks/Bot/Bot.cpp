@@ -1,5 +1,3 @@
-#include <Geode/Result.hpp>
-
 #include <modules.hpp>
 #include <modules/bot/bot.hpp>
 #include <modules/config/config.hpp>
@@ -7,6 +5,7 @@
 #include <modules/gui/popup.hpp>
 #include <modules/gui/cocos/cocos.hpp>
 #include <modules/gui/components/button.hpp>
+#include <modules/gui/components/combo.hpp>
 #include <modules/gui/components/filesystem-combo.hpp>
 #include <modules/gui/components/radio.hpp>
 #include <modules/gui/components/toggle.hpp>
@@ -23,9 +22,28 @@ using namespace geode::prelude;
 
 namespace eclipse::hacks::Bot {
     static bot::Bot s_bot;
-    static bool s_respawning = false;
+    // static bool s_respawning = false;
+    static bool s_dontPlaceAuto = false;
+    bot::Bot& getBot() { return s_bot; }
 
     void newReplay() {
+        std::string defaultValue;
+        // TODO: turn all of this into a util func
+        if (auto scene = utils::get<cocos2d::CCScene>()) {
+            if (auto* pl = utils::get<PlayLayer>()) {
+                defaultValue = pl->m_level->m_levelName;
+            } else if (auto* lil = scene->getChildByType<LevelInfoLayer>(0)) {
+                defaultValue = lil->m_level->m_levelName;
+            } else if (auto* lil = scene->getChildByType<EditLevelLayer>(0)) {
+                defaultValue = lil->m_levelName;
+            } else if (auto* lil = scene->getChildByType<LevelEditorLayer>(0)) {
+                defaultValue = lil->m_level->m_levelName;
+            } else if (auto* lil = scene->getChildByType<LevelSelectLayer>(0)) {
+                if (auto lp = typeinfo_cast<LevelPage*>(lil->m_scrollLayer->getPage(lil->m_scrollLayer->m_page))) {
+                    defaultValue = lp->m_level->m_levelName;
+                }
+            }
+        }
         Popup::prompt(
             i18n::get_("bot.new-replay"),
             i18n::get_("bot.new-replay.msg"),
@@ -62,7 +80,7 @@ namespace eclipse::hacks::Bot {
             },
             i18n::get_("common.create"),
             i18n::get_("common.cancel"),
-            ""
+            defaultValue
         );
     }
 
@@ -192,7 +210,7 @@ namespace eclipse::hacks::Bot {
                         );
                     }
                     // apparently i cannot put the Popup below here otherwise some memory corruption happens, WHY? its not even a pointer!!
-                    config::set("bot.selectedreplay", "");
+                    config::set<std::string_view>("bot.selectedreplay", "");
 
                     // refresh cocos ui page
                     if (auto cocos = gui::cocos::CocosRenderer::get())
@@ -200,6 +218,23 @@ namespace eclipse::hacks::Bot {
                 }
             }
         );
+    }
+    void openReplaysFolder() {
+        auto replaysDir = Mod::get()->getSaveDir() / "replays";
+        std::error_code ec;
+        
+        // create the folder if it doesn't exist
+        if (!std::filesystem::exists(replaysDir, ec)) {
+            std::filesystem::create_directory(replaysDir, ec);
+            if (ec) {
+                return Popup::create(
+                    i18n::get_("common.error"),
+                    ec.message()
+                );
+            }
+        }
+        
+        geode::utils::file::openFolder(replaysDir);
     }
 
     class $hack(Bot) {
@@ -222,6 +257,12 @@ namespace eclipse::hacks::Bot {
             config::set("global.tpsbypass.toggle", true);
             if (s_bot.getState() == bot::State::RECORD) {
                 s_bot.setFramerate(utils::getTPS());
+
+                // disable Click Between Steps
+                GameManager::get()->setGameVariable(GameVar::ClickBetweenSteps, false);
+                if (auto gl = utils::get<GJBaseGameLayer>()) {
+                    gl->m_clickBetweenSteps = false;
+                }
             } else {
                 config::set<float>("global.tpsbypass", s_bot.getFramerate());
             }
@@ -246,7 +287,7 @@ namespace eclipse::hacks::Bot {
             };
 
 #ifdef GEODE_IS_WINDOWS
-            config::set("bot.practice-fix-mode", 1);
+            config::set("bot.practice-fix-mode", 0); // TODO: change to 1 when memory practice fix is fixed
 #else
             config::set("bot.practice-fix-mode", 0);
 #endif
@@ -262,7 +303,7 @@ namespace eclipse::hacks::Bot {
 
             tab->addFilesystemCombo("bot.replays", "bot.selectedreplay", Mod::get()->getSaveDir() / "replays");
 #ifdef GEODE_IS_WINDOWS
-            tab->addCombo("bot.practice-fix-mode", {"Checkpoint", "Memory"}, 0);
+            tab->addCombo("bot.practice-fix-mode", {"Checkpoint", "Memory"}, 0)->setDescription();
 #endif
 
             tab->addToggle("bot.ignore-inputs")->handleKeybinds()->setDescription();
@@ -271,6 +312,7 @@ namespace eclipse::hacks::Bot {
             tab->addButton("common.save")->handleKeybinds()->callback(saveReplay);
             tab->addButton("common.load")->handleKeybinds()->callback(loadReplay);
             tab->addButton("common.delete")->handleKeybinds()->callback(deleteReplay);
+            tab->addButton("bot.open-replays-folder")->handleKeybinds()->callback(openReplaysFolder);
         }
 
         [[nodiscard]] bool isCheating() const override {
@@ -284,50 +326,25 @@ namespace eclipse::hacks::Bot {
 
     REGISTER_HACK(Bot)
 
-    $execute {
-        new EventListener<EventFilter<events::LoadReplayEvent>>(+[](events::LoadReplayEvent* e) {
-            if (auto* path = e->getPath()) {
-                e->setResult(s_bot.load(*path));
-            } else {
-                e->setResult(s_bot.load(e->getData()));
-            }
-            return ListenerResult::Stop;
-        });
-    }
-
     class $modify(BotPLHook, PlayLayer) {
         bool init(GJGameLevel* gj, bool p1, bool p2) {
             bool result = PlayLayer::init(gj, p1, p2);
             s_bot.setLevelInfo(gdr::Level(gj->m_levelName, gj->m_levelID.value()));
             s_bot.setPlatformer(gj->isPlatformer());
-            s_respawning = false;
+            // s_respawning = false;
             return result;
         }
 
         void resetLevel() {
-            s_respawning = true;
+            // s_respawning = true;
             PlayLayer::resetLevel();
             Bot::applySettings();
-
-            int practiceFixMode = config::get<int>("bot.practice-fix-mode", 0);
-
-            if (s_bot.getState() == bot::State::RECORD) {
-                //gd does this automatically for holding but not releases so we do it manually
-                s_bot.recordInput(m_gameState.m_currentProgress + 1, PlayerButton::Jump, false, false);
-                if(practiceFixMode == 0) m_player1->m_isDashing = false; // temporary, find better way to fix dash orbs
-                if (m_gameState.m_isDualMode && m_levelSettings->m_twoPlayerMode) {
-                    s_bot.recordInput(m_gameState.m_currentProgress + 1, PlayerButton::Jump, true, false);
-                    if(practiceFixMode == 0) m_player2->m_isDashing = false;
-                }
+            
+            if (m_checkpointArray->count() == 0) {
+                if(s_bot.getState() != bot::State::PLAYBACK)
+                    s_bot.clearInputs();
+                s_bot.restart();
             }
-
-            if (m_checkpointArray->count() > 0) return;
-
-            s_bot.restart();
-
-            if (s_bot.getState() == bot::State::PLAYBACK) return;
-
-            s_bot.clearInputs();
         }
 
         CheckpointObject* markCheckpoint() {
@@ -343,25 +360,109 @@ namespace eclipse::hacks::Bot {
             if (s_bot.getState() != bot::State::RECORD || !playLayer)
                 return PlayLayer::loadFromCheckpoint(checkpoint);
 
-            s_bot.removeInputsAfter(checkpoint->m_gameState.m_currentProgress);
+            s_bot.removeInputsAfter(checkpoint->m_gameState.m_currentProgress / 2);
 
             PlayLayer::loadFromCheckpoint(checkpoint);
+        }
+
+        void pauseGame(bool unfocused) {
+            PlayLayer::pauseGame(unfocused);
+            if (s_bot.getState() != bot::State::RECORD)
+                return;
+
+            // here robtop calls releaseAllButtons on player1 twice. i'm assuming this is a bug and will be fixed in the next versions.
+            // if that's the case, then add this for player2 as well.
+            bool swapControls = GameManager::get()->getGameVariable(GameVar::Flip2PlayerControls);
+            for(int button = 1; button <= 3; button++) {
+                s_bot.recordInput(
+                    // + 1 because while the input happens on this frame, it will only get processed on the next frame
+                    // because of pausing. since we don't pause on playback simulate this by adding one frame
+                    (m_gameState.m_currentProgress / 2) + 1,
+                    (PlayerButton)button, swapControls, false
+                );
+            }
+        }
+    };
+
+    class $modify(BotPlayerHook, PlayerObject) {
+        struct Fields {
+            bool m_triedPlacingCheckpoint = false;
+        };
+
+        static void onModify(auto& self) {
+            int value = config::get("bot.state", 0);
+            geode::Hook* hookPtr = nullptr;
+            auto it = self.m_hooks.find("PlayerObject::tryPlaceCheckpoint");
+            if (it != self.m_hooks.end()) {
+                it->second->setAutoEnable(value == (int)bot::State::RECORD);
+                it->second->setPriority(SAFE_HOOK_PRIORITY);
+                hookPtr = it->second.get();
+            } else {
+                geode::log::warn("Hook 'tryPlaceCheckpoint' not found in class 'PlayerObject'");
+            }
+            config::addDelegate("bot.state", [hookPtr] {
+                int value = config::get("bot.state", 0);
+                (void) hookPtr->toggle(value == (int)bot::State::RECORD);
+            });
+        }
+
+        void tryPlaceCheckpoint() {
+            if(s_dontPlaceAuto) {
+                m_fields->m_triedPlacingCheckpoint = true;
+                return;
+            }
+            PlayerObject::tryPlaceCheckpoint();
         }
     };
 
     class $modify(BotBGLHook, GJBaseGameLayer) {
 
         static void onModify(auto& self) {
-            SAFE_HOOKS(GJBaseGameLayer, "processCommands");
+            SAFE_HOOKS(GJBaseGameLayer, "processQueuedButtons");
+            
+            int value = config::get("bot.state", 0);
+            geode::Hook* hookPtr = nullptr;
+            auto it = self.m_hooks.find("GJBaseGameLayer::update");
+            if (it != self.m_hooks.end()) {
+                it->second->setAutoEnable(value == (int)bot::State::RECORD);
+                it->second->setPriority(SAFE_HOOK_PRIORITY);
+                hookPtr = it->second.get();
+            } else {
+                geode::log::warn("Hook 'update' not found in class 'GJBaseGameLayer'");
+            }
+            config::addDelegate("bot.state", [hookPtr] {
+                int value = config::get("bot.state", 0);
+                (void) hookPtr->toggle(value == (int)bot::State::RECORD);
+            });
+        }
+
+        void update(float dt) {
+            auto player1Fields = reinterpret_cast<BotPlayerHook*>(m_player1)->m_fields.self();
+            auto player2Fields = reinterpret_cast<BotPlayerHook*>(m_player2)->m_fields.self();
+
+            player1Fields->m_triedPlacingCheckpoint = false;
+            player2Fields->m_triedPlacingCheckpoint = false;
+            s_dontPlaceAuto = true;
+            GJBaseGameLayer::update(dt);
+            s_dontPlaceAuto = false;
+
+            if(player1Fields->m_triedPlacingCheckpoint) {
+                m_player1->m_shouldTryPlacingCheckpoint = true;
+                m_player1->tryPlaceCheckpoint();
+            }
+            if(player2Fields->m_triedPlacingCheckpoint) {
+                m_player2->m_shouldTryPlacingCheckpoint = true;
+                m_player2->tryPlaceCheckpoint();
+            }
         }
 
         void simulateClick(PlayerButton button, bool down, bool player2) {
             auto performButton = down ? &PlayerObject::pushButton : &PlayerObject::releaseButton;
-            bool swapControls = GameManager::get()->getGameVariable("0010");
+            bool swapControls = GameManager::get()->getGameVariable(GameVar::Flip2PlayerControls);
             player2 = swapControls ? !player2 : player2;
 
             // in two player mode, only one player should be controlled
-            if (m_levelSettings->m_twoPlayerMode && m_gameState.m_isDualMode) {
+            if (m_levelSettings->m_twoPlayerMode) {
                 PlayerObject* player = player2 ? m_player2 : m_player1;
                 (player->*performButton)(button);
             } else {
@@ -384,37 +485,52 @@ namespace eclipse::hacks::Bot {
             }
         }
 
-        void processCommands(float dt) {
-            GJBaseGameLayer::processCommands(dt);
-            if(s_respawning) s_respawning = false;
+        void processBot() {
+            // if(s_respawning) s_respawning = false;
 
             if (s_bot.getState() != bot::State::PLAYBACK)
                 return;
 
             std::optional<gdr::Input<>> input = std::nullopt;
 
-            while ((input = s_bot.poll(m_gameState.m_currentProgress)) != std::nullopt) {
+            // TODO: 2.208 made m_currentProgress count twice as fast, for now we just divide it by 2
+            // to avoid breaking existing replays. Find a better solution later
+            auto progress = m_gameState.m_currentProgress / 2;
+
+            while ((input = s_bot.poll(progress)) != std::nullopt) {
+                #ifdef GEODE_IS_MOBILE
+                m_allowedButtons.clear();
+                #endif
                 this->simulateClick((PlayerButton) input->button, input->down, input->player2);
             }
+        }
+
+        void processQueuedButtons(float dt, bool clearInputQueue) {
+            GJBaseGameLayer::processQueuedButtons(dt, clearInputQueue);
+            this->processBot();
         }
 
         void handleButton(bool down, int button, bool player1) {
             if (s_bot.getState() == bot::State::PLAYBACK && s_bot.getInputCount() && config::get<bool>("bot.ignore-inputs", false))
                 return;
 
-            if (s_bot.getState() == bot::State::RECORD && s_respawning) { // somethow this avoid a weird bug where an orb buffered if you press down while respawning doesn't register
-                bool swapControls = GameManager::get()->getGameVariable("0010");
-                bool player2 = swapControls ? player1 : !player1;
-                PlayerObject* checkPlayer = player2 ? m_player2 : m_player1;
-                if(checkPlayer->m_touchedRings.size() > 0) return;
-            }
+            // does not seem to be happening anymore in 2.208. leaving this here in case it pops up again
+            // if (s_bot.getState() == bot::State::RECORD && s_respawning) { // somehow this avoid a weird bug where an orb buffered if you press down while respawning doesn't register
+            //     bool swapControls = GameManager::get()->getGameVariable("0010");
+            //     bool player2 = swapControls ? player1 : !player1;
+            //     PlayerObject* checkPlayer = player2 ? m_player2 : m_player1;
+            //     if(checkPlayer->m_touchedRings.size() > 0) return;
+            // }
 
             GJBaseGameLayer::handleButton(down, button, player1);
 
             if (s_bot.getState() != bot::State::RECORD)
                 return;
 
-            s_bot.recordInput(m_gameState.m_currentProgress, (PlayerButton) button, !player1, down);
+            s_bot.recordInput(
+                m_gameState.m_currentProgress / 2,
+                (PlayerButton) button, !player1, down
+            );
         }
     };
 
@@ -422,7 +538,10 @@ namespace eclipse::hacks::Bot {
     class $modify(BotEUIHook, EditorUI) {
         void onPlaytest(CCObject* sender) {
             if (auto* editorLayer = utils::get<LevelEditorLayer>()) {
-                editorLayer->m_gameState.m_currentProgress = 0;
+                if (editorLayer->m_playbackMode == PlaybackMode::Not) {
+                    s_bot.restart();
+                    editorLayer->m_gameState.m_currentProgress = 0;
+                }
             }
             EditorUI::onPlaytest(sender);
         }

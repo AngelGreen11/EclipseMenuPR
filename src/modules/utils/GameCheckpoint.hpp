@@ -15,7 +15,7 @@ namespace eclipse::utils {
             m_player2CollisionBlock = playLayer->m_player2CollisionBlock;
             m_extraDelta = playLayer->m_extraDelta;
             m_unk32d0 = playLayer->m_unk32d0;
-            m_queueInterval = playLayer->m_queueInterval;
+            // m_queueInterval = playLayer->m_queueInterval;
             m_unk32ec = playLayer->m_unk32ec;
             m_currentStep = playLayer->m_currentStep;
             m_unk3380 = playLayer->m_unk3380;
@@ -32,7 +32,7 @@ namespace eclipse::utils {
             playLayer->m_player2CollisionBlock = m_player2CollisionBlock;
             playLayer->m_extraDelta = m_extraDelta;
             playLayer->m_unk32d0 = m_unk32d0;
-            playLayer->m_queueInterval = m_queueInterval;
+            // playLayer->m_queueInterval = m_queueInterval;
             playLayer->m_unk32ec = m_unk32ec;
             playLayer->m_currentStep = m_currentStep;
             playLayer->m_unk3380 = m_unk3380;
@@ -211,7 +211,7 @@ namespace eclipse::utils {
             m_maybeReverseAcceleration = player->m_maybeReverseAcceleration;
             m_xVelocityRelated2 = player->m_xVelocityRelated2;
             m_isDashing = player->m_isDashing;
-            m_unk9e8 = player->m_unk9e8;
+            m_dashFireFrame = player->m_dashFireFrame;
             m_groundObjectMaterial = player->m_groundObjectMaterial;
             m_vehicleSize = player->m_vehicleSize;
             m_playerSpeed = player->m_playerSpeed;
@@ -302,6 +302,19 @@ namespace eclipse::utils {
             m_position = player->m_position;
             m_rotation = player->getRotation();
 
+            m_positionX = player->m_positionX;
+            m_positionY = player->m_positionY;
+            m_unmodifiedPositionX = player->m_unmodifiedPositionX;
+            m_unmodifiedPositionY = player->m_unmodifiedPositionY;
+
+            m_rotationXOffset = player->m_rotationXOffset;
+            m_rotationYOffset = player->m_rotationYOffset;
+            m_fRotationX = player->m_fRotationX;
+            m_fRotationY = player->m_fRotationY;
+            m_isRotationAligned = player->m_isRotationAligned;
+            m_startRotationX = player->m_startRotationX;
+            m_startRotationY = player->m_startRotationY;
+
             #ifndef GEODE_IS_ANDROID
 
             m_rotateObjectsRelated = player->m_rotateObjectsRelated; // unordered_map<int, GJPointDouble>
@@ -333,7 +346,7 @@ namespace eclipse::utils {
             player->m_dashStartTime = m_dashStartTime;
             player->m_slopeStartTime = m_slopeStartTime;
             player->m_justPlacedStreak = m_justPlacedStreak;
-            player->m_maybeLastGroundObject = m_maybeLastGroundObject;
+            // player->m_maybeLastGroundObject = m_maybeLastGroundObject;
             player->m_lastCollisionBottom = m_lastCollisionBottom;
             player->m_lastCollisionTop = m_lastCollisionTop;
             player->m_lastCollisionLeft = m_lastCollisionLeft;
@@ -470,7 +483,7 @@ namespace eclipse::utils {
             player->m_maybeReverseAcceleration = m_maybeReverseAcceleration;
             player->m_xVelocityRelated2 = m_xVelocityRelated2;
             player->m_isDashing = m_isDashing;
-            player->m_unk9e8 = m_unk9e8;
+            player->m_dashFireFrame = m_dashFireFrame;
             player->m_groundObjectMaterial = m_groundObjectMaterial;
             player->m_vehicleSize = m_vehicleSize;
             player->m_playerSpeed = m_playerSpeed;
@@ -560,6 +573,18 @@ namespace eclipse::utils {
             player->m_position = m_position;
             player->setPosition(m_position);
             player->setRotation(m_rotation);
+            player->m_positionX = m_positionX;
+            player->m_positionY = m_positionY;
+            player->m_unmodifiedPositionX = m_unmodifiedPositionX;
+            player->m_unmodifiedPositionY = m_unmodifiedPositionY;
+
+            player->m_rotationXOffset = m_rotationXOffset;
+            player->m_rotationYOffset = m_rotationYOffset;
+            player->m_fRotationX = m_fRotationX;
+            player->m_fRotationY = m_fRotationY;
+            player->m_isRotationAligned = m_isRotationAligned;
+            player->m_startRotationX = m_startRotationX;
+            player->m_startRotationY = m_startRotationY;
 
             #ifndef GEODE_IS_ANDROID
 
@@ -731,7 +756,7 @@ namespace eclipse::utils {
         double m_maybeReverseAcceleration;
         float m_xVelocityRelated2;
         bool m_isDashing;
-        int m_unk9e8;
+        int m_dashFireFrame;
         int m_groundObjectMaterial;
         float m_vehicleSize;
         float m_playerSpeed;
@@ -818,6 +843,18 @@ namespace eclipse::utils {
         bool m_robotAnimation1Enabled;
         bool m_robotAnimation2Enabled;
         bool m_spiderAnimationEnabled;
+
+        double m_positionX;
+        double m_positionY;
+        float m_unmodifiedPositionX;
+        float m_unmodifiedPositionY;
+        float m_rotationXOffset;
+        float m_rotationYOffset;
+        float m_fRotationX;
+        float m_fRotationY;
+        bool m_isRotationAligned;
+        float m_startRotationX;
+        float m_startRotationY;
 
         // these dont work well on android
         // (P.S. robtop pls update NDK)

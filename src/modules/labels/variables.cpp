@@ -16,25 +16,27 @@
 
 #include <rift/config.hpp>
 
-#include <dankmeme.globed2/include/globed.hpp>
+#include <dankmeme.globed2/include/globed/soft-link/Wrappers.hpp>
 
 namespace eclipse::labels {
     static std::vector<EffectGameObject*> s_coins;
 
     rift::Value getConfigValue(std::string const& key) {
-        if (!config::has(key)) {
-            return {};
-        }
         switch (config::getType(key)) {
-            case nlohmann::detail::value_t::string: return config::get<std::string>(key).unwrap();
-            case nlohmann::detail::value_t::boolean: return config::get<bool>(key).unwrap();
-            case nlohmann::detail::value_t::number_integer: return config::get<int>(key).unwrap();
-            case nlohmann::detail::value_t::number_float: return config::get<float>(key).unwrap();
+            case matjson::Type::String: return config::get<std::string>(key).unwrap();
+            case matjson::Type::Bool: return config::get<bool>(key).unwrap();
+            case matjson::Type::Object: return config::get<matjson::Value>(key).unwrap();
+            case matjson::Type::Number: {
+                if (config::getStorage()[key].isExactlyDouble()) {
+                    return config::get<double>(key).unwrap();
+                }
+                return config::get<int64_t>(key).unwrap();
+            }
             default: return {};
         }
     }
 
-    $on_mod(Loaded) {
+    $execute {
         rift::Config::get().makeFunction("cfg", getConfigValue);
     }
 
@@ -121,6 +123,35 @@ namespace eclipse::labels {
         m_variables["speakNoEvilMonkey"] = "🙊";
         m_variables["crownEmoji"] = "👑";
         m_variables["prayEmoji"] = "🙏";
+
+        m_variables["thinkingEmoji"] = "🤔";
+        m_variables["gearEmoji"] = "⚙️";
+        m_variables["muteEmoji"] = "🔇";
+        m_variables["pensiveEmoji"] = "😔";
+        m_variables["sweatSmileEmoji"] = "😅";
+        m_variables["muscleEmoji"] = "💪";
+        m_variables["rocketEmoji"] = "🚀";
+        m_variables["blushEmoji"] = "😊";
+        m_variables["raisedHandsEmoji"] = "🙌";
+        m_variables["smirkEmoji"] = "😏";
+        m_variables["vEmoji"] = "✌️";
+        m_variables["smileEmoji"] = "😄";
+        m_variables["relievedEmoji"] = "😌";
+        m_variables["blueHeartEmoji"] = "💙";
+        m_variables["sleepingEmoji"] = "😴";
+        m_variables["waveEmoji"] = "👋";
+        m_variables["cryEmoji"] = "😢";
+        m_variables["oceanEmoji"] = "🌊";
+        m_variables["triumphEmoji"] = "😤";
+        m_variables["grimacingEmoji"] = "😬";
+        m_variables["confusedEmoji"] = "😕";
+        m_variables["dartEmoji"] = "🎯";
+        m_variables["earEmoji"] = "👂";
+        m_variables["thoughtEmoji"] = "💭";
+        m_variables["eyesEmoji"] = "👀";
+        m_variables["bulbEmoji"] = "💡";
+        m_variables["videoGameEmoji"] = "🎮";
+        m_variables["nailsEmoji"] = "💅";
 
         // special emojis
         m_variables["emojis"] = rift::Object{
@@ -425,7 +456,7 @@ namespace eclipse::labels {
 
     void VariableManager::fetchTimeData() {
         auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        auto localTime = fmt::localtime(time);
+        auto localTime = geode::localtime(time);
         m_variables["hour"] = localTime.tm_hour;
         m_variables["minute"] = localTime.tm_min;
         m_variables["second"] = localTime.tm_sec;
@@ -575,7 +606,7 @@ namespace eclipse::labels {
     void VariableManager::fetchGameplayData(GJBaseGameLayer* gameLayer) {
         if (!gameLayer) {
             // Reset all gameplay variables
-            constexpr std::array keys = {
+            static constexpr std::array keys = {
                 "attempt", "isTestMode", "isPracticeMode", "isPlatformer",
                 "levelTime", "levelLength", "levelDuration", "time", "frame",
                 "isDead", "isTwoPlayer", "isDualMode", "noclipDeaths", "noclipAccuracy", "progress",
@@ -600,13 +631,13 @@ namespace eclipse::labels {
         m_variables["levelLength"] = gameLayer->m_levelLength;
         m_variables["levelDuration"] = gameLayer->m_level->m_timestamp / 240.f;
         m_variables["time"] = utils::formatTime(gameLayer->m_gameState.m_levelTime);
-        m_variables["frame"] = gameLayer->m_gameState.m_currentProgress;
+        m_variables["frame"] = (int64_t)gameLayer->m_gameState.m_currentProgress;
         m_variables["frameReal"] = gameLayer->m_gameState.m_levelTime * utils::getTPS();
         m_variables["isDead"] = gameLayer->m_player1->m_isDead;
         m_variables["isTwoPlayerLevel"] = (gameLayer->m_player2 != nullptr);
         m_variables["isDualMode"] = gameLayer->m_player2 != nullptr && gameLayer->m_player2->isRunning();
         m_variables["noclipDeaths"] = config::getTemp("noclipDeaths", 0);
-        m_variables["noclipAccuracy"] = config::getTemp("noclipAccuracy", 100.f);
+        m_variables["noclipAccuracy"] = config::getTemp("noclipAccuracy", 100.0);
         m_variables["progress"] = utils::getActualProgress(gameLayer);
         m_variables["timeWarp"] = gameLayer->m_gameState.m_timeWarp;
         m_variables["gravity"] = gameLayer->m_player1->m_gravityMod;
@@ -677,17 +708,19 @@ namespace eclipse::labels {
 
         if (enabled) {
             // net
-            globed[std::string("isConnected")] = globed::net::isConnected().unwrapOrDefault();
-            globed[std::string("ping")] = (int64_t)globed::net::getPing().unwrapOrDefault();
-            globed[std::string("tps")] = (int64_t)globed::net::getServerTps().unwrapOrDefault();
+            globed[std::string("isConnected")] = globed::api::net::isConnected();
+            globed[std::string("ping")] = (int64_t)globed::api::net::getGamePingMs();
+            globed[std::string("centralPing")] = (int64_t)globed::api::net::getCentralPingMs();
+            globed[std::string("tps")] = (int64_t)globed::api::net::getGameTickrate();
 
             // suggestion for daniel meme to add:
             // serverName
             // roomName
             // roomId
             // other room things
-            globed[std::string("playersOnline")] = (int64_t)globed::player::playersOnline().unwrapOrDefault();
-            globed[std::string("playersOnLevel")] = (int64_t)globed::player::playersOnLevel().unwrapOrDefault();
+
+            // globed[std::string("playersOnline")] = (int64_t)globed::api::player::playersOnline();
+            globed[std::string("playersOnLevel")] = (int64_t)globed::api::game::getPlayerCount();
         }
     }
 
@@ -709,9 +742,7 @@ namespace eclipse::labels {
     }
 
     class $modify(LabelsGJBGLHook, GJBaseGameLayer) {
-        void processCommands(float dt) {
-            GJBaseGameLayer::processCommands(dt);
-
+        static void updateTPS() {
             static time_t s_lastUpdate = utils::getTimestamp();
             static size_t s_frames = 0;
             s_frames++;
@@ -725,6 +756,18 @@ namespace eclipse::labels {
                 s_frames = 0;
             }
         }
+
+        #ifndef GEODE_IS_MACOS
+        void processCommands(float dt, bool isHalfTick, bool isLastTick) {
+            GJBaseGameLayer::processCommands(dt, isHalfTick, isLastTick);
+            this->updateTPS();
+        }
+        #else
+        void processQueuedButtons(float dt, bool clearInputQueue) {
+            GJBaseGameLayer::processQueuedButtons(dt, clearInputQueue);
+            this->updateTPS();
+        }
+        #endif
     };
 
     class $modify(VariablesPLHook, PlayLayer) {
@@ -766,8 +809,8 @@ namespace eclipse::labels {
 
             if(config::get<"player.noclip", bool>(false) && !m_levelEndAnimationStarted && !m_hasCompletedLevel) {
                 if (config::get<"player.noclip.acclimit.toggle", bool>(false)) {
-                    float acc = config::getTemp<float>("noclipAccuracy", 100.f);
-                    float limit = config::get<"player.noclip.acclimit", float>(95.f);
+                    double acc = config::getTemp<double>("noclipAccuracy", 100.0);
+                    double limit = config::get<"player.noclip.acclimit", double>(95.0);
                     if (acc >= limit)
                         return false;
                 }
@@ -808,7 +851,7 @@ namespace eclipse::labels {
             }
         }
 
-        void resetLevel() {
+        void resetLevel() override {
             PlayLayer::resetLevel();
             auto from = utils::getActualProgress(this);
             m_fields->m_runFrom = from;
