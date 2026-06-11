@@ -610,7 +610,7 @@ namespace eclipse::labels {
                 "attempt", "isTestMode", "isPracticeMode", "isPlatformer",
                 "levelTime", "levelLength", "levelDuration", "time", "frame",
                 "isDead", "isTwoPlayer", "isDualMode", "noclipDeaths", "noclipAccuracy", "progress",
-                "editorMode", "realProgress", "objects"
+                "editorMode", "realProgress", "objects", "levelEnded"
             };
             for (auto const& key : keys) {
                 removeVariable(key);
@@ -622,19 +622,17 @@ namespace eclipse::labels {
             fetchPlayerData(nullptr, true);
             return;
         }
-
+        
         m_variables["attempt"] = gameLayer->m_attempts;
         m_variables["isTestMode"] = gameLayer->m_isTestMode;
         m_variables["isPracticeMode"] = gameLayer->m_isPracticeMode;
         m_variables["isPlatformer"] = gameLayer->m_isPlatformer;
-        m_variables["levelTime"] = gameLayer->m_gameState.m_levelTime;
         m_variables["levelLength"] = gameLayer->m_levelLength;
         m_variables["levelDuration"] = gameLayer->m_level->m_timestamp / 240.f;
-        m_variables["time"] = utils::formatTime(gameLayer->m_gameState.m_levelTime);
         m_variables["frame"] = (int64_t)gameLayer->m_gameState.m_currentProgress;
         m_variables["frameReal"] = gameLayer->m_gameState.m_levelTime * utils::getTPS();
         m_variables["isDead"] = gameLayer->m_player1->m_isDead;
-        m_variables["isTwoPlayerLevel"] = (gameLayer->m_player2 != nullptr);
+        m_variables["isTwoPlayer"] = gameLayer->m_levelSettings ? gameLayer->m_levelSettings->m_twoPlayerMode : false;
         m_variables["isDualMode"] = gameLayer->m_player2 != nullptr && gameLayer->m_player2->isRunning();
         m_variables["noclipDeaths"] = config::getTemp("noclipDeaths", 0);
         m_variables["noclipAccuracy"] = config::getTemp("noclipAccuracy", 100.0);
@@ -645,6 +643,12 @@ namespace eclipse::labels {
         m_variables["gradients"] = gameLayer->m_activeGradients;
         m_variables["particleCount"] = gameLayer->m_particleCount;
         m_variables["randomSeed"] = static_cast<int64_t>(GameToolbox::getfast_srand());
+
+        auto* pl = geode::typeinfo::cast<PlayLayer*>(gameLayer);
+        double activeTime = (pl && gameLayer->m_level->isPlatformer()) ? pl->m_platformerTimer : gameLayer->m_levelTimer;
+        m_variables["levelTime"] = activeTime;
+        m_variables["time"] = utils::formatTime(activeTime);
+        m_variables["levelEnded"] = pl ? pl->m_hasCompletedLevel : false;
 
         auto fmod = utils::get<FMODAudioEngine>();
         m_variables["songsCount"] = fmod->countActiveMusic();
@@ -685,7 +689,7 @@ namespace eclipse::labels {
         }
         m_variables["coins"] = coinsArr;
 
-        if (auto* pl = utils::get<PlayLayer>()) {
+        if (pl) {
             m_variables["editorMode"] = false;
             m_variables["realProgress"] = pl->getCurrentPercent();
             m_variables["objects"] = gameLayer->m_level->m_objectCount.value();
@@ -793,6 +797,7 @@ namespace eclipse::labels {
             auto& manager = VariableManager::get();
             manager.setVariable("runFrom", 0.f);
             manager.setVariable("bestRun", 0.f);
+            manager.setVariable("levelEnded", false);
 
             return true;
         }
