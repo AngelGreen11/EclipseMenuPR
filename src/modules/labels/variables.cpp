@@ -466,6 +466,12 @@ namespace eclipse::labels {
         m_variables["year"] = localTime.tm_year + 1900;
         m_variables["clock"] = utils::getClock();
         m_variables["clock12"] = utils::getClock(true);
+
+        static const auto s_gameLaunchTime = std::chrono::steady_clock::now();
+        auto currentTime = std::chrono::steady_clock::now();
+        double sessionSeconds = std::chrono::duration<double>(currentTime - s_gameLaunchTime).count();
+        m_variables["sessionTimeRaw"] = sessionSeconds;
+        m_variables["sessionTime"] = utils::formatTime(sessionSeconds);
     }
 
     void VariableManager::fetchHacksData() {
@@ -610,7 +616,7 @@ namespace eclipse::labels {
                 "attempt", "isTestMode", "isPracticeMode", "isPlatformer",
                 "levelTime", "levelLength", "levelDuration", "time", "frame",
                 "isDead", "isTwoPlayer", "isDualMode", "noclipDeaths", "noclipAccuracy", "progress",
-                "editorMode", "realProgress", "objects", "levelEnded"
+                "editorMode", "realProgress", "objects", "levelEnded", "levelSessionTime", "levelSessionTimeRaw"
             };
             for (auto const& key : keys) {
                 removeVariable(key);
@@ -643,14 +649,14 @@ namespace eclipse::labels {
         m_variables["gradients"] = gameLayer->m_activeGradients;
         m_variables["particleCount"] = gameLayer->m_particleCount;
         m_variables["randomSeed"] = static_cast<int64_t>(GameToolbox::getfast_srand());
+        m_variables["levelSessionTimeRaw"] = gameLayer->m_gameState.m_totalTime;
+        m_variables["levelSessionTime"] = utils::formatTime(gameLayer->m_gameState.m_totalTime);
 
         auto* pl = utils::get<PlayLayer>();
-        if (pl) {
-        double activeTime = gameLayer->m_level->isPlatformer() ? pl->m_platformerTimer : pl->m_levelTimer;
-        }
+        double activeTime = pl ? pl->m_attemptTime : 0.0;
         m_variables["levelTime"] = activeTime;
         m_variables["time"] = utils::formatTime(activeTime);
-        m_variables["levelEnded"] = pl ? pl->m_hasCompletedLevel : false;
+        m_variables["levelEnded"] = pl ? (pl->m_levelEndAnimationStarted || pl->m_hasCompletedLevel) : false;
 
         auto fmod = utils::get<FMODAudioEngine>();
         m_variables["songsCount"] = fmod->countActiveMusic();
