@@ -644,8 +644,10 @@ namespace eclipse::labels {
         m_variables["particleCount"] = gameLayer->m_particleCount;
         m_variables["randomSeed"] = static_cast<int64_t>(GameToolbox::getfast_srand());
 
-        auto* pl = geode::typeinfo::cast<PlayLayer*>(gameLayer);
-        double activeTime = (pl && gameLayer->m_level->isPlatformer()) ? pl->m_platformerTimer : gameLayer->m_levelTimer;
+        auto* pl = utils::get<PlayLayer>();
+        if (pl) {
+        double activeTime = gameLayer->m_level->isPlatformer() ? pl->m_platformerTimer : pl->m_levelTimer;
+        }
         m_variables["levelTime"] = activeTime;
         m_variables["time"] = utils::formatTime(activeTime);
         m_variables["levelEnded"] = pl ? pl->m_hasCompletedLevel : false;
