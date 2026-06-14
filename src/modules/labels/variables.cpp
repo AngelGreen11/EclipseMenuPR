@@ -652,23 +652,21 @@ namespace eclipse::labels {
         auto* pl = utils::get<PlayLayer>();
         auto levelFrame = (int64_t)gameLayer->m_gameState.m_currentProgress;
         m_variables["frame"] = levelFrame;
-
-        const bool endedStatus = false;
+        
         // Code for time variables
         static double totalTime = 0.0;
         if (gameLayer->m_isPlatformer) {
             static double lastTime = 0.0;
             auto levelTime = gameLayer->m_gameState.m_levelTime;
             if (levelFrame == 0) {totalTime = 0.0;}
-            if (levelFrame != 0 && levelTime > lastTime && !endedStatus) {totalTime += levelTime - lastTime;}
+            if (levelFrame != 0 && levelTime > lastTime && !m_variables["levelEnded"].as_bool()) {totalTime += levelTime - lastTime;}
             lastTime = levelTime;
         } else {
             totalTime = gameLayer->m_gameState.m_levelTime;
         }
         m_variables["levelTime"] = totalTime;
         m_variables["time"] = utils::formatTime(totalTime);
-        endedStatus = pl ? (pl->m_levelEndAnimationStarted || pl->m_hasCompletedLevel) : false;
-        m_variables["levelEnded"] = endedStatus;
+        m_variables["levelEnded"] = pl ? (pl->m_levelEndAnimationStarted || pl->m_hasCompletedLevel) : false;
         
         auto fmod = utils::get<FMODAudioEngine>();
         m_variables["songsCount"] = fmod->countActiveMusic();
