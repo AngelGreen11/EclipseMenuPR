@@ -635,7 +635,6 @@ namespace eclipse::labels {
         m_variables["isPlatformer"] = gameLayer->m_isPlatformer;
         m_variables["levelLength"] = gameLayer->m_levelLength;
         m_variables["levelDuration"] = gameLayer->m_level->m_timestamp / 240.f;
-        m_variables["frame"] = (int64_t)gameLayer->m_gameState.m_currentProgress;
         m_variables["frameReal"] = gameLayer->m_gameState.m_levelTime * utils::getTPS();
         m_variables["isDead"] = gameLayer->m_player1->m_isDead;
         m_variables["isTwoPlayer"] = gameLayer->m_levelSettings ? gameLayer->m_levelSettings->m_twoPlayerMode : false;
@@ -651,15 +650,17 @@ namespace eclipse::labels {
         m_variables["randomSeed"] = static_cast<int64_t>(GameToolbox::getfast_srand());
 
         auto* pl = utils::get<PlayLayer>();
-        static int s_lastAttempt = 0;
-        static double s_offset = 0.0;
-        if (!pl) { s_lastAttempt = 0; s_offset = 0.0; }
-        else if (pl->m_attempts != s_lastAttempt) {
-            s_offset = gameLayer->m_gameState.m_totalTime;
-            s_lastAttempt = pl->m_attempts;
-        }
+        auto levelFrame = (int64_t)gameLayer->m_gameState.m_currentProgress;
+        m_variables["frame"] = levelFrame;
+
+        static double totalTime = 0.0;
+        static double lastTime = 0.0;
+        auto levelTime = gameLayer->m_gameState.m_levelTime;
+        if (levelFrame == 0) {totalTime = 0.0;}
+        if (levelFrame != 0 && levelTime > lastTime) {totalTime += levelTime - lastTime;}
+        lastTime = levelTime;
+        
         bool endedStatus = pl ? (pl->m_levelEndAnimationStarted || pl->m_hasCompletedLevel) : false;
-        double activeTime = endedStatus ? pl->m_gameState.m_levelTime : std::max(0.0, gameLayer->m_gameState.m_totalTime - s_offset);
         m_variables["levelTime"] = activeTime;
         m_variables["time"] = utils::formatTime(activeTime);
         m_variables["levelEnded"] = endedStatus;
