@@ -616,7 +616,7 @@ namespace eclipse::labels {
                 "attempt", "isTestMode", "isPracticeMode", "isPlatformer",
                 "levelTime", "levelLength", "levelDuration", "time", "frame",
                 "isDead", "isTwoPlayer", "isDualMode", "noclipDeaths", "noclipAccuracy", "progress",
-                "editorMode", "realProgress", "objects", "levelEnded", "levelSessionTime", "levelSessionTimeRaw"
+                "editorMode", "realProgress", "objects", "levelEnded"
             };
             for (auto const& key : keys) {
                 removeVariable(key);
@@ -649,14 +649,20 @@ namespace eclipse::labels {
         m_variables["gradients"] = gameLayer->m_activeGradients;
         m_variables["particleCount"] = gameLayer->m_particleCount;
         m_variables["randomSeed"] = static_cast<int64_t>(GameToolbox::getfast_srand());
-        m_variables["levelSessionTimeRaw"] = gameLayer->m_gameState.m_totalTime;
-        m_variables["levelSessionTime"] = utils::formatTime(gameLayer->m_gameState.m_totalTime);
 
         auto* pl = utils::get<PlayLayer>();
-        double activeTime = pl ? pl->m_attemptTime : 0.0;
+        static int s_lastAttempt = 0;
+        static double s_offset = 0.0;
+        if (!pl) { s_lastAttempt = 0; s_offset = 0.0; }
+        else if (pl->m_currentAttempt != s_lastAttempt) {
+            s_offset = gameLayer->m_gameState.m_totalTime;
+            s_lastAttempt = pl->m_currentAttempt;
+        }
+        bool endedStatus = pl ? (pl->m_levelEndAnimationStarted || pl->m_hasCompletedLevel) : false;
+        double activeTime = endedStatus ? pl->m_gameState.m_levelTime : std::max(0.0, gameLayer->m_gameState.m_totalTime - s_offset);
         m_variables["levelTime"] = activeTime;
         m_variables["time"] = utils::formatTime(activeTime);
-        m_variables["levelEnded"] = pl ? (pl->m_levelEndAnimationStarted || pl->m_hasCompletedLevel) : false;
+        m_variables["levelEnded"] = endedStatus;
 
         auto fmod = utils::get<FMODAudioEngine>();
         m_variables["songsCount"] = fmod->countActiveMusic();
