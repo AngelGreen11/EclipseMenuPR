@@ -654,9 +654,9 @@ namespace eclipse::labels {
         static int s_lastAttempt = 0;
         static double s_offset = 0.0;
         if (!pl) { s_lastAttempt = 0; s_offset = 0.0; }
-        else if (pl->m_attempt != s_lastAttempt) {
+        else if (pl->m_attempts != s_lastAttempt) {
             s_offset = gameLayer->m_gameState.m_totalTime;
-            s_lastAttempt = pl->m_attempt;
+            s_lastAttempt = pl->m_attempts;
         }
         bool endedStatus = pl ? (pl->m_levelEndAnimationStarted || pl->m_hasCompletedLevel) : false;
         double activeTime = endedStatus ? pl->m_gameState.m_levelTime : std::max(0.0, gameLayer->m_gameState.m_totalTime - s_offset);
