@@ -816,7 +816,6 @@ namespace eclipse::labels {
             auto& manager = VariableManager::get();
             manager.setVariable("runFrom", 0.f);
             manager.setVariable("bestRun", 0.f);
-            manager.setVariable("levelEnded", false);
 
             return true;
         }
