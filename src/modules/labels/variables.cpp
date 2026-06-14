@@ -658,7 +658,7 @@ namespace eclipse::labels {
             static double lastTime = 0.0;
             auto levelTime = gameLayer->m_gameState.m_levelTime;
             if (levelFrame == 0) {totalTime = 0.0;}
-            if (levelFrame != 0 && levelTime > lastTime && !m_variables["levelEnded"].get<bool>()) {totalTime += levelTime - lastTime;}
+            if (levelFrame != 0 && levelTime > lastTime && !m_variables["levelEnded"]) {totalTime += levelTime - lastTime;}
             lastTime = levelTime;
         } else {
             totalTime = gameLayer->m_gameState.m_levelTime;
