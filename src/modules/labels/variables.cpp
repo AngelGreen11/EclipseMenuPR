@@ -661,8 +661,8 @@ namespace eclipse::labels {
         lastTime = levelTime;
         
         bool endedStatus = pl ? (pl->m_levelEndAnimationStarted || pl->m_hasCompletedLevel) : false;
-        m_variables["levelTime"] = activeTime;
-        m_variables["time"] = utils::formatTime(activeTime);
+        m_variables["levelTime"] = totalTime;
+        m_variables["time"] = utils::formatTime(totalTime);
         m_variables["levelEnded"] = endedStatus;
 
         auto fmod = utils::get<FMODAudioEngine>();
