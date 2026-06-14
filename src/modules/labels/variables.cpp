@@ -649,7 +649,6 @@ namespace eclipse::labels {
         m_variables["particleCount"] = gameLayer->m_particleCount;
         m_variables["randomSeed"] = static_cast<int64_t>(GameToolbox::getfast_srand());
 
-        auto* pl = utils::get<PlayLayer>();
         auto levelFrame = (int64_t)gameLayer->m_gameState.m_currentProgress;
         m_variables["frame"] = levelFrame;
         
@@ -659,13 +658,15 @@ namespace eclipse::labels {
             static double lastTime = 0.0;
             auto levelTime = gameLayer->m_gameState.m_levelTime;
             if (levelFrame == 0) {totalTime = 0.0;}
-            if (levelFrame != 0 && levelTime > lastTime && !m_variables["levelEnded"].as_bool()) {totalTime += levelTime - lastTime;}
+            if (levelFrame != 0 && levelTime > lastTime && !m_variables["levelEnded"].get<bool>()) {totalTime += levelTime - lastTime;}
             lastTime = levelTime;
         } else {
             totalTime = gameLayer->m_gameState.m_levelTime;
         }
         m_variables["levelTime"] = totalTime;
         m_variables["time"] = utils::formatTime(totalTime);
+        
+        auto* pl = utils::get<PlayLayer>();
         m_variables["levelEnded"] = pl ? (pl->m_levelEndAnimationStarted || pl->m_hasCompletedLevel) : false;
         
         auto fmod = utils::get<FMODAudioEngine>();
