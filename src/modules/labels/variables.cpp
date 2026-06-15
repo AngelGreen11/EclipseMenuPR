@@ -475,7 +475,10 @@ namespace eclipse::labels {
     }
 
     void VariableManager::fetchHacksData() {
-        m_variables["isCheating"] = config::getTemp("hasCheats", false);
+        if (gameLayer->m_attempts != lastAttempt || m_variables["frame"] == 0) {m_variables["isCheating"] = false;}
+        if (config::getTemp("hasCheats", false)) {m_variables["isCheating"] = true;}
+        const auto lastAttempt = gameLayer->m_attempts;
+        
         m_variables["noclip"] = config::get("player.noclip", false);
         m_variables["speedhack"] = config::get("global.speedhack.toggle", false);
         m_variables["speedhackSpeed"] = config::get("global.speedhack", 1.f);
