@@ -476,8 +476,10 @@ namespace eclipse::labels {
 
     void VariableManager::fetchHacksData() {
         static int lastAttempt = 0;
-        int currentAttempt = m_variables["attempt"].get<int>();
-        if (currentAttempt != lastAttempt || m_variables["frame"].get<int>() == 0) {m_variables["isCheating"] = false;}
+        auto* gameLayer = utils::get<GJBaseGameLayer>();
+        auto currentAttempt = gameLayer ? gameLayer->m_attempts : 0;
+        auto levelFrame = gameLayer ? static_cast<int64_t>(gameLayer->m_gameState.m_currentProgress) : 0;
+        if (currentAttempt != lastAttempt || levelFrame == 0) {m_variables["isCheating"] = false;}
         if (config::getTemp("hasCheats", false)) {m_variables["isCheating"] = true;}
         lastAttempt = currentAttempt;
         
