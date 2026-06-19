@@ -476,15 +476,17 @@ namespace eclipse::labels {
 
     void VariableManager::fetchHacksData() {
         static int lastAttempt = 0;
+        static int indicatorValue = 0;
         auto isCheating = config::getTemp("hasCheats", false);
         auto* gameLayer = utils::get<GJBaseGameLayer>();
         auto currentAttempt = gameLayer ? gameLayer->m_attempts : 0;
         auto levelFrame = gameLayer ? static_cast<int64_t>(gameLayer->m_gameState.m_currentProgress) : 0;
-        if (currentAttempt != lastAttempt || levelFrame == 0) {m_variables["cheatIndicator"] = 0;}
-        if (isCheating) {m_variables["cheatIndicator"] = 1;}
-        if (m_variables["cheatIndicator"] == 1 && !isCheating) {m_variables["cheatIndicator"] = 2;}
+        if (currentAttempt != lastAttempt || levelFrame == 0) {indicatorValue = 0;}
+        if (isCheating) {indicatorValue = 1;}
+        if (indicatorValue == 1 && !isCheating) {indicatorValue = 2;}
         lastAttempt = currentAttempt;
 
+        m_variables["cheatIndicator"] = indicatorValue;
         m_variables["isCheating"] = isCheating;
         m_variables["noclip"] = config::get("player.noclip", false);
         m_variables["speedhack"] = config::get("global.speedhack.toggle", false);
