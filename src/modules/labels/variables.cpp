@@ -619,7 +619,7 @@ namespace eclipse::labels {
                 "attempt", "isTestMode", "isPracticeMode", "isPlatformer",
                 "levelTime", "levelLength", "levelDuration", "time", "frame",
                 "isDead", "isTwoPlayer", "isDualMode", "noclipDeaths", "noclipAccuracy", "progress",
-                "editorMode", "realProgress", "objects", "levelEnded"
+                "editorMode", "realProgress", "objects", "levelEnded", "isFlipped"
             };
             for (auto const& key : keys) {
                 removeVariable(key);
@@ -651,11 +651,13 @@ namespace eclipse::labels {
         m_variables["gradients"] = gameLayer->m_activeGradients;
         m_variables["particleCount"] = gameLayer->m_particleCount;
         m_variables["randomSeed"] = static_cast<int64_t>(GameToolbox::getfast_srand());
-
+        m_variables["isFlipped"] = gameLayer->m_player1->m_isUpsideDown;
+        m_variables["isFlippedP2"] = gameLayer->m_player2->m_isUpsideDown;
+        
         auto levelFrame = (int64_t)gameLayer->m_gameState.m_currentProgress;
         m_variables["frame"] = levelFrame;
         
-        // Code for time variables
+        // Code for time variables (I couldn't find the actual platformer time variables, please replace)
         static double totalTime = 0.0;
         if (gameLayer->m_isPlatformer) {
             static double lastTime = 0.0;
